@@ -15,11 +15,13 @@ function initApp() {
     setupTheme();
     setupFormEvents();
     setupTableFilters();
+    
+    // Initial Render on Load - Syncs LocalStorage with UI instantly
     renderApp();
 }
 
 /* ==========================================================================
-   2. NAVIGATION & NAVIGATION THEME
+   2. NAVIGATION & THEME TOGGLE
    ========================================================================== */
 function setupNavigation() {
     const menuItems = document.querySelectorAll('.menu-item');
@@ -42,7 +44,7 @@ function setupNavigation() {
             document.getElementById('page-title').textContent = item.textContent;
             
             activeView = target;
-            renderApp(); // Re-render view specific features
+            renderApp(); // Re-render target specific features
         });
     });
 
@@ -201,9 +203,9 @@ function savePurchase() {
    4. RENDER ENGINE & DISPATCHER
    ========================================================================== */
 function renderApp() {
-    if (activeView === 'dashboard') renderDashboard();
-    if (activeView === 'purchase-history') renderHistoryTable();
-    if (activeView === 'inventory') renderInventoryTable();
+    renderDashboard();
+    renderHistoryTable();
+    renderInventoryTable();
     if (activeView === 'reports') renderReports();
     
     // Sync Supplier filter options across History view
@@ -227,12 +229,12 @@ function setupTableFilters() {
     document.getElementById('history-filter-supplier').addEventListener('change', renderHistoryTable);
     document.getElementById('inventory-search').addEventListener('input', renderInventoryTable);
     
-    // Global danger data wiped via Settings
+    // Global data wipe via Settings
     document.getElementById('btn-clear-data').addEventListener('click', () => {
         if(confirm('Are you absolutely sure you want to clear ALL inventory data? This cannot be undone.')){
-            localStorage.clear();
+            localStorage.removeItem('landed_purchases');
             purchases = [];
-            showToast('All app state wiped.');
+            showToast('All app data wiped.');
             renderApp();
         }
     });
@@ -240,6 +242,7 @@ function setupTableFilters() {
 
 function syncSupplierFilters() {
     const select = document.getElementById('history-filter-supplier');
+    if(!select) return;
     const currentVal = select.value;
     const uniqueSuppliers = [...new Set(purchases.map(p => p.supplier))];
     
@@ -252,6 +255,7 @@ function syncSupplierFilters() {
 
 function renderHistoryTable() {
     const tbody = document.getElementById('history-tbody');
+    if(!tbody) return;
     const search = document.getElementById('history-search').value.toLowerCase();
     const supplierFilter = document.getElementById('history-filter-supplier').value;
 
@@ -402,10 +406,11 @@ window.deletePurchase = function(id) {
    ========================================================================== */
 function renderInventoryTable() {
     const tbody = document.getElementById('inventory-tbody');
+    if(!tbody) return;
     const search = document.getElementById('inventory-search').value.toLowerCase();
     tbody.innerHTML = '';
 
-    // Aggregate inventory groups by product variant/name map
+    // Aggregate inventory groups by product variant map
     const inventoryMap = {};
 
     purchases.forEach(p => {
