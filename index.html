@@ -3,251 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LandedCost - Inventory Management</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Landed Cost & Inventory Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <div class="app-container">
-        
         <aside class="sidebar">
             <div class="sidebar-brand">
-                <h2>LandedCost</h2>
+                <h2>LandedCost App</h2>
             </div>
             <nav class="sidebar-menu">
                 <a href="#" class="menu-item active" data-target="dashboard">Dashboard</a>
-                <a href="#" class="menu-item" data-target="new-purchase">New Purchase</a>
-                <a href="#" class="menu-item" data-target="purchase-history">Purchase History</a>
-                <a href="#" class="menu-item" data-target="inventory">Inventory</a>
-                <a href="#" class="menu-item" data-target="reports">Reports</a>
-                <a href="#" class="menu-item" data-target="settings">Settings</a>
+                <a href="#" class="menu-item" data-target="new-purchase">New Procurement</a>
+                <a href="#" class="menu-item" data-target="purchase-history">Purchase Ledger</a>
+                <a href="#" class="menu-item" data-target="inventory">Global Inventory</a>
+                <a href="#" class="menu-item" data-target="reports">Analytics & Reports</a>
             </nav>
             <div class="sidebar-footer">
-                <button id="theme-toggle" class="btn btn-secondary">Toggle Theme</button>
+                <button id="theme-toggle" class="btn btn-secondary btn-block">Toggle Theme</button>
             </div>
         </aside>
 
         <main class="main-content">
-            
-            <header class="top-header">
+            <header class="main-header">
                 <h1 id="page-title">Dashboard</h1>
-                <div class="user-profile">Wholesale Admin</div>
+                <div id="toast-container"></div>
             </header>
 
-            <div class="content-view">
-
-                <section id="view-dashboard" class="view-section active">
-                    <div class="metrics-grid">
-                        <div class="card metric-card">
-                            <h3>Total Inventory Value</h3>
-                            <p id="dash-total-value">₹0.00</p>
-                        </div>
-                        <div class="card metric-card">
-                            <h3>Total Purchases</h3>
-                            <p id="dash-total-purchases">0</p>
-                        </div>
-                        <div class="card metric-card">
-                            <h3>Total Expenses Tracked</h3>
-                            <p id="dash-total-expenses">₹0.00</p>
-                        </div>
+            <section id="view-dashboard" class="view-section active">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <h3>Total Inventory Investment</h3>
+                        <p id="dash-total-value">₹0.00</p>
                     </div>
-                </section>
+                    <div class="metric-card">
+                        <h3>Procurement Records</h3>
+                        <p id="dash-total-purchases">0</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Total Freight & Overheads</h3>
+                        <p id="dash-total-expenses">₹0.00</p>
+                    </div>
+                </div>
+            </section>
 
-                <section id="view-new-purchase" class="view-section">
-                    <form id="purchase-form" autocomplete="off">
-                        <div class="form-grid">
-                            
-                            <div class="card form-card">
-                                <h3>Purchase & Product Details</h3>
+            <section id="view-new-purchase" class="view-section">
+                <div class="workspace-layout">
+                    <div class="form-container">
+                        <form id="purchase-form">
+                            <h3 class="section-heading">1. General Details</h3>
+                            <div class="form-grid">
                                 <div class="form-group">
-                                    <label for="p-title">Purchase Title *</label>
-                                    <input type="text" id="p-title" required placeholder="e.g., Summer Batch Import">
-                                </div>
-                                <div class="form-inline-group">
-                                    <div class="form-group">
-                                        <label for="p-supplier">Supplier Name *</label>
-                                        <input type="text" id="p-supplier" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="p-invoice">Invoice Number</label>
-                                        <input type="text" id="p-invoice">
-                                    </div>
+                                    <label>Consignment Title</label>
+                                    <input type="text" id="p-title" placeholder="e.g., Raw Material Batch A" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="p-date">Purchase Date *</label>
+                                    <label>Supplier / Vendor</label>
+                                    <input type="text" id="p-supplier" placeholder="e.g., Shree Balaji Traders" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Invoice Number</label>
+                                    <input type="text" id="p-invoice" placeholder="INV-2026-001">
+                                </div>
+                                <div class="form-group">
+                                    <label>Date of Purchase</label>
                                     <input type="date" id="p-date" required>
                                 </div>
-                                <hr>
+                            </div>
+
+                            <h3 class="section-heading">2. Product Dimensions</h3>
+                            <div class="form-grid">
                                 <div class="form-group">
-                                    <label for="p-prod-name">Product Name *</label>
-                                    <input type="text" id="p-prod-name" required>
+                                    <label>Product Name</label>
+                                    <input type="text" id="p-prod-name" placeholder="e.g., Premium Tiles" required>
                                 </div>
-                                <div class="form-inline-group">
-                                    <div class="form-group">
-                                        <label for="p-category">Category</label>
-                                        <input type="text" id="p-category">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="p-brand">Brand</label>
-                                        <input type="text" id="p-brand">
-                                    </div>
+                                <div class="form-group">
+                                    <label>Category</label>
+                                    <input type="text" id="p-category" placeholder="e.g., Ceramics">
                                 </div>
-                                <div class="form-inline-group">
-                                    <div class="form-group">
-                                        <label for="p-sku">SKU</label>
-                                        <input type="text" id="p-sku">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="p-qty">Quantity *</label>
-                                        <input type="number" id="p-qty" min="1" value="1" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="p-rate">Rate Per Piece (₹) *</label>
-                                        <input type="number" id="p-rate" min="0" step="0.01" value="0" required>
-                                    </div>
+                                <div class="form-group">
+                                    <label>Brand / Manufacturer</label>
+                                    <input type="text" id="p-brand" placeholder="e.g., Kajaria">
+                                </div>
+                                <div class="form-group">
+                                    <label>SKU / Identification Code</label>
+                                    <input type="text" id="p-sku" placeholder="SKU-TILE-09">
+                                </div>
+                                <div class="form-group">
+                                    <label>Quantity (Units / Pcs)</label>
+                                    <input type="number" id="p-qty" min="1" placeholder="100" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Base Rate per Unit (₹)</label>
+                                    <input type="number" id="p-rate" step="0.01" placeholder="450" required>
                                 </div>
                             </div>
 
-                            <div class="form-sidebar-grid">
-                                <div class="card expense-card">
-                                    <h3>Direct Expenses</h3>
-                                    <div class="form-group">
-                                        <label for="exp-hamali">Hamali (₹)</label>
-                                        <input type="number" id="exp-hamali" class="expense-input" min="0" value="0">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="exp-transport">Transport (₹)</label>
-                                        <input type="number" id="exp-transport" class="expense-input" min="0" value="0">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="exp-room">Room Transport (₹)</label>
-                                        <input type="number" id="exp-room" class="expense-input" min="0" value="0">
-                                    </div>
-                                    
-                                    <div id="custom-expenses-container">
-                                        </div>
-                                    <button type="button" id="btn-add-expense" class="btn btn-link">+ Add Custom Expense</button>
+                            <h3 class="section-heading" style="display:flex; justify-content:space-between; align-items:center;">
+                                3. Direct Landed Expenses
+                                <button type="button" class="btn btn-secondary btn-xs" id="btn-add-expense">+ Add Custom Expense</button>
+                            </h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Hamali / Loading Charges (₹)</label>
+                                    <input type="number" id="exp-hamali" class="expense-input" min="0" value="0">
                                 </div>
-
-                                <div class="card summary-card">
-                                    <h3>Calculation Summary</h3>
-                                    <div class="summary-row">
-                                        <span>Product Cost:</span>
-                                        <span id="calc-prod-cost">₹0.00</span>
-                                    </div>
-                                    <div class="summary-row">
-                                        <span>Total Expenses:</span>
-                                        <span id="calc-total-exp">₹0.00</span>
-                                    </div>
-                                    <div class="summary-row highlight">
-                                        <span>Grand Total:</span>
-                                        <span id="calc-grand-total">₹0.00</span>
-                                    </div>
-                                    <div class="summary-row highlight-sub">
-                                        <span>Avg. Cost Per Piece:</span>
-                                        <span id="calc-avg-cost">₹0.00</span>
-                                    </div>
-                                    <button type="submit" id="btn-save-purchase" class="btn btn-primary w-100">Save Purchase</button>
+                                <div class="form-group">
+                                    <label>Main Freight / Transport (₹)</label>
+                                    <input type="number" id="exp-transport" class="expense-input" min="0" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <label>Local Room/Warehouse Freight (₹)</label>
+                                    <input type="number" id="exp-room" class="expense-input" min="0" value="0">
                                 </div>
                             </div>
+                            <div id="custom-expenses-container"></div>
 
-                        </div>
-                    </form>
-                </section>
+                            <div style="margin-top:2rem;">
+                                <button type="submit" class="btn btn-primary">Save Ledger Entry to Cloud</button>
+                            </div>
+                        </form>
+                    </div>
 
-                <section id="view-purchase-history" class="view-section">
-                    <div class="card table-card">
-                        <div class="table-actions">
-                            <input type="text" id="history-search" placeholder="Search history...">
-                            <select id="history-filter-supplier">
-                                <option value="">All Suppliers</option>
-                            </select>
-                        </div>
-                        <div class="table-responsive">
-                            <table id="history-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Title</th>
-                                        <th>Supplier</th>
-                                        <th>Product</th>
-                                        <th>Qty</th>
-                                        <th>Prod. Cost</th>
-                                        <th>Grand Total</th>
-                                        <th>Avg. Cost</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="history-tbody">
-                                    </tbody>
-                            </table>
+                    <div class="summary-sticky">
+                        <div class="summary-card">
+                            <h3>Live Calculations Dashboard</h3>
+                            <hr>
+                            <div class="summary-row"><span>Base Product Cost:</span><strong id="calc-prod-cost">₹0.00</strong></div>
+                            <div class="summary-row"><span>Accumulated Expenses:</span><strong id="calc-total-exp">₹0.00</strong></div>
+                            <div class="summary-row font-lg"><span>Grand Total Landed Cost:</span><strong id="calc-grand-total">₹0.00</strong></div>
+                            <div class="summary-row highlight"><span>Effective Landed Cost / Pc:</span><strong id="calc-avg-cost">₹0.00</strong></div>
                         </div>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <section id="view-inventory" class="view-section">
-                    <div class="card table-card">
-                        <div class="table-actions">
-                            <input type="text" id="inventory-search" placeholder="Search product or SKU...">
-                        </div>
-                        <div class="table-responsive">
-                            <table id="inventory-table">
-                                <thead>
-                                    <tr>
-                                        <th>Product</th>
-                                        <th>Current Quantity</th>
-                                        <th>Average Cost</th>
-                                        <th>Inventory Value</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="inventory-tbody">
-                                    </tbody>
-                            </table>
-                        </div>
+            <section id="view-purchase-history" class="view-section">
+                <div class="table-controls">
+                    <input type="text" id="history-search" class="search-input" placeholder="Search product name or batch title...">
+                    <select id="history-filter-supplier" class="filter-select">
+                        <option value="">All Suppliers</option>
+                    </select>
+                    <button id="btn-clear-data" class="btn btn-danger btn-xs" style="margin-left: auto;">Purge Cloud Database</button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Batch Title</th>
+                                <th>Supplier</th>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Base cost</th>
+                                <th>Landed Total</th>
+                                <th>Landed / Pc</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="view-inventory" class="view-section">
+                <div class="table-controls">
+                    <input type="text" id="inventory-search" class="search-input" placeholder="Filter unified items...">
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Consolidated Product Description</th>
+                                <th>Total Stock Received</th>
+                                <th>Weighted Average Cost / Unit</th>
+                                <th>Total Asset Worth</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="view-reports" class="view-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>Investment Timeline (Monthly)</h3>
+                        <canvas id="chart-monthly"></canvas>
                     </div>
-                </section>
-
-                <section id="view-reports" class="view-section">
-                    <div class="charts-grid">
-                        <div class="card chart-card">
-                            <h3>Monthly Purchases</h3>
-                            <canvas id="chart-monthly"></canvas>
-                        </div>
-                        <div class="card chart-card">
-                            <h3>Expense Summary</h3>
-                            <canvas id="chart-expenses"></canvas>
-                        </div>
+                    <div class="chart-container">
+                        <h3>Expense Distribution Breakdown</h3>
+                        <canvas id="chart-expenses"></canvas>
                     </div>
-                </section>
-
-                <section id="view-settings" class="view-section">
-                    <div class="card">
-                        <h3>Application Settings</h3>
-                        <p>Manage your data and configurations locally.</p>
-                        <hr>
-                        <button id="btn-clear-data" class="btn btn-danger">Clear All LocalStorage Data</button>
-                    </div>
-                </section>
-
-            </div>
+                </div>
+            </section>
         </main>
     </div>
 
     <div id="details-modal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modal-title">Purchase Details</h3>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body" id="modal-details-body">
-                </div>
-        </div>
-    </div>
-
-    <div id="toast-container" class="toast-container"></div>
-
-    <script src="script.js"></script>
-</body>
-</html>
+            <span class="close-modal">&times;</span>
+            <h2 id="modal-title" style="margin-bottom:1.5rem;">Ledger Details</h2>
