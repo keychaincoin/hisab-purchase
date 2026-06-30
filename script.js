@@ -1,11 +1,11 @@
 /* ==========================================================================
    1. SUPABASE CONFIGURATION & STATE
    ========================================================================== */
-// Pre-configured with your specific fresh anon key and exact project URL
+// Centralized Cloud Configuration 
 const SUPABASE_URL = "https://r5ccI6IkpXVCJ9.supabase.co"; 
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InI1Y2NJNklrcFhWQ0o5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MzM5NjIsImV4cCI6MjA5ODQwOTk2Mn0.hLTZxOMJYyHx3i1ycobS2RUaCzaf7hP-s4SmkCLbO7s";
 
-// Initialize Supabase Client
+// Global Supabase Interface
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let purchases = [];
@@ -23,11 +23,11 @@ async function initApp() {
     setupFormEvents();
     setupTableFilters();
     
-    // Fetch fresh data from the Cloud Database instantly on load
+    // Core pipeline initialization from database cloud ecosystem
     await fetchPurchasesFromCloud();
 }
 
-// Fetch helper from Supabase Cloud
+// Global Sync Pipeline
 async function fetchPurchasesFromCloud() {
     try {
         const { data, error } = await _supabase
@@ -37,7 +37,7 @@ async function fetchPurchasesFromCloud() {
 
         if (error) throw error;
 
-        // Map database columns back to our frontend camelCase state framework
+        // Map backend state structures back into memory model arrays
         purchases = data.map(p => ({
             id: p.id,
             title: p.title,
@@ -56,13 +56,13 @@ async function fetchPurchasesFromCloud() {
 
         renderApp();
     } catch (err) {
-        console.error("Error fetching data from cloud:", err.message);
-        showToast("Cloud fetch failed. Checking connection...");
+        console.error("Cloud synchronization error:", err.message);
+        showToast("Error mapping live cloud pipeline data.");
     }
 }
 
 /* ==========================================================================
-   2. NAVIGATION & THEME TOGGLE
+   2. NAVIGATION ENGINE
    ========================================================================== */
 function setupNavigation() {
     const menuItems = document.querySelectorAll('.menu-item');
@@ -105,7 +105,7 @@ function setupTheme() {
 }
 
 /* ==========================================================================
-   3. PURCHASE FORM & LIVE CALCULATIONS
+   3. ARITHMETIC CONTROLLERS & SUBMISSIONS
    ========================================================================== */
 function setupFormEvents() {
     const form = document.getElementById('purchase-form');
@@ -187,7 +187,6 @@ async function savePurchase() {
     const isEditMode = !!form.dataset.editId;
     const purchaseId = form.dataset.editId || 'p-' + Date.now();
 
-    // Mapping fields to Supabase Table structure (snake_case columns)
     const dbPayload = {
         id: purchaseId,
         title: document.getElementById('p-title').value,
@@ -223,13 +222,11 @@ async function savePurchase() {
 
         showToast(isEditMode ? 'Cloud Record Updated!' : 'Saved to Cloud Securely!');
         
-        // Reset Form
         if (isEditMode) delete form.dataset.editId;
         form.reset();
         document.getElementById('custom-expenses-container').innerHTML = '';
         calculateLiveSummary();
 
-        // Refresh pipeline
         await fetchPurchasesFromCloud();
         document.querySelector('[data-target="purchase-history"]').click();
 
@@ -240,7 +237,7 @@ async function savePurchase() {
 }
 
 /* ==========================================================================
-   4. RENDER ENGINE & DISPATCHER
+   4. RENDER SUBSYSTEMS
    ========================================================================== */
 function renderApp() {
     renderDashboard();
@@ -260,7 +257,7 @@ function renderDashboard() {
 }
 
 /* ==========================================================================
-   5. PURCHASE HISTORY ENGINE (CRUD)
+   5. CRUD OPERATION INTERFACES
    ========================================================================== */
 function setupTableFilters() {
     document.getElementById('history-search').addEventListener('input', renderHistoryTable);
@@ -268,11 +265,11 @@ function setupTableFilters() {
     document.getElementById('inventory-search').addEventListener('input', renderInventoryTable);
     
     document.getElementById('btn-clear-data').addEventListener('click', async () => {
-        if(confirm('Are you absolutely sure you want to clear ALL cloud data? This cannot be undone.')){
+        if(confirm('Are you absolutely sure you want to clear ALL cloud data?')){
             showToast('Purging database...');
             const { error } = await _supabase.from('landed_purchases').delete().neq('id', 'void');
             if(!error) {
-                showToast('Cloud Database Wiped.');
+                showToast('Cloud Wiped.');
                 await fetchPurchasesFromCloud();
             }
         }
@@ -464,11 +461,7 @@ function renderInventoryTable() {
     purchases.forEach(p => {
         const key = p.productName.toLowerCase().trim();
         if(!inventoryMap[key]) {
-            inventoryMap[key] = {
-                name: p.productName,
-                totalQty: 0,
-                totalValue: 0
-            };
+            inventoryMap[key] = { name: p.productName, totalQty: 0, totalValue: 0 };
         }
         inventoryMap[key].totalQty += p.qty;
         inventoryMap[key].totalValue += p.calculations.grandTotal;
@@ -476,7 +469,6 @@ function renderInventoryTable() {
 
     Object.values(inventoryMap).forEach(item => {
         if(search && !item.name.toLowerCase().includes(search)) return;
-
         const calculatedAvg = item.totalQty > 0 ? (item.totalValue / item.totalQty) : 0;
 
         const row = document.createElement('tr');
@@ -542,17 +534,13 @@ function renderReports() {
 }
 
 /* ==========================================================================
-   8. NOTIFICATION ENGINE (TOASTS)
+   8. NOTIFICATION ENGINE
    ========================================================================== */
 function showToast(message) {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.textContent = message;
-    
     container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
+    setTimeout(() => { toast.remove(); }, 3000);
 }
