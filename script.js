@@ -1,9 +1,9 @@
 /* ==========================================================================
    1. SUPABASE CONFIGURATION & STATE
    ========================================================================== */
-// Pre-configured with your specific safe anon key and project URL
-const SUPABASE_URL = "https://ceunrfmztclbejonyfe.supabase.co"; 
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNldW5yZm1tenRjbGJlam9ueWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MzM5NjIsImV4cCI6MjA5ODQwOTk2Mn0.hLTZxOMJYyHx3i1ycobS2RUaCzaf7hP-s4SmkCLbO7s";
+// Pre-configured with your specific fresh anon key and exact project URL
+const SUPABASE_URL = "https://r5ccI6IkpXVCJ9.supabase.co"; 
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InI1Y2NJNklrcFhWQ0o5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MzM5NjIsImV4cCI6MjA5ODQwOTk2Mn0.hLTZxOMJYyHx3i1ycobS2RUaCzaf7hP-s4SmkCLbO7s";
 
 // Initialize Supabase Client
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
