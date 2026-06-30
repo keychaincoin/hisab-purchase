@@ -1,7 +1,14 @@
 /* ==========================================================================
-   1. APP STATE & INITIALIZATION
+   1. SUPABASE CONFIGURATION & STATE
    ========================================================================== */
-let purchases = JSON.parse(localStorage.getItem('landed_purchases')) || [];
+// Pre-configured with your specific safe anon key and project URL
+const SUPABASE_URL = "https://ceunrfmztclbejonyfe.supabase.co"; 
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNldW5yZm1tenRjbGJlam9ueWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MzM5NjIsImV4cCI6MjA5ODQwOTk2Mn0.hLTZxOMJYyHx3i1ycobS2RUaCzaf7hP-s4SmkCLbO7s";
+
+// Initialize Supabase Client
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let purchases = [];
 let activeView = 'dashboard';
 let chartMonthlyInstance = null;
 let chartExpensesInstance = null;
@@ -10,14 +17,48 @@ document.addEventListener('DOMContentLoaded', () => {
     initApp();
 });
 
-function initApp() {
+async function initApp() {
     setupNavigation();
     setupTheme();
     setupFormEvents();
     setupTableFilters();
     
-    // Initial Render on Load - Syncs LocalStorage with UI instantly
-    renderApp();
+    // Fetch fresh data from the Cloud Database instantly on load
+    await fetchPurchasesFromCloud();
+}
+
+// Fetch helper from Supabase Cloud
+async function fetchPurchasesFromCloud() {
+    try {
+        const { data, error } = await _supabase
+            .from('landed_purchases')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Map database columns back to our frontend camelCase state framework
+        purchases = data.map(p => ({
+            id: p.id,
+            title: p.title,
+            supplier: p.supplier,
+            invoice: p.invoice,
+            date: p.date,
+            productName: p.product_name,
+            category: p.category,
+            brand: p.brand,
+            sku: p.sku,
+            qty: p.qty,
+            rate: parseFloat(p.rate),
+            expenses: p.expenses,
+            calculations: p.calculations
+        }));
+
+        renderApp();
+    } catch (err) {
+        console.error("Error fetching data from cloud:", err.message);
+        showToast("Cloud fetch failed. Checking connection...");
+    }
 }
 
 /* ==========================================================================
@@ -30,25 +71,21 @@ function setupNavigation() {
             e.preventDefault();
             const target = item.getAttribute('data-target');
             
-            // Toggle active menu class
             menuItems.forEach(mi => mi.classList.remove('active'));
             item.classList.add('active');
 
-            // Switch views
             document.querySelectorAll('.view-section').forEach(section => {
                 section.classList.remove('active');
             });
             document.getElementById(`view-${target}`).classList.add('active');
             
-            // Header Title Update
             document.getElementById('page-title').textContent = item.textContent;
             
             activeView = target;
-            renderApp(); // Re-render target specific features
+            renderApp();
         });
     });
 
-    // Close Modal setup
     document.querySelector('.close-modal').addEventListener('click', () => {
         document.getElementById('details-modal').classList.remove('active');
     });
@@ -74,10 +111,8 @@ function setupFormEvents() {
     const form = document.getElementById('purchase-form');
     const addExpenseBtn = document.getElementById('btn-add-expense');
     
-    // Live calculation triggers on input changes
     form.addEventListener('input', calculateLiveSummary);
 
-    // Dynamic Expense Adder
     addExpenseBtn.addEventListener('click', () => {
         const container = document.getElementById('custom-expenses-container');
         const uniqueId = 'cust-' + Date.now();
@@ -103,7 +138,6 @@ function setupFormEvents() {
         container.appendChild(row);
     });
 
-    // Handle form submit (Save Purchase)
     form.addEventListener('submit', (e) => {
         e.preventDefault();
         savePurchase();
@@ -113,16 +147,12 @@ function setupFormEvents() {
 function calculateLiveSummary() {
     const qty = parseFloat(document.getElementById('p-qty').value) || 0;
     const rate = parseFloat(document.getElementById('p-rate').value) || 0;
-
-    // Base Product Cost
     const productCost = qty * rate;
     
-    // Core Expenses
     const hamali = parseFloat(document.getElementById('exp-hamali').value) || 0;
     const transport = parseFloat(document.getElementById('exp-transport').value) || 0;
     const roomTransport = parseFloat(document.getElementById('exp-room').value) || 0;
     
-    // Custom Expenses
     let customExpensesTotal = 0;
     document.querySelectorAll('.custom-expense-row').forEach(row => {
         const amt = parseFloat(row.querySelector('.cust-amount').value) || 0;
@@ -133,7 +163,6 @@ function calculateLiveSummary() {
     const grandTotal = productCost + totalExpenses;
     const avgCost = qty > 0 ? (grandTotal / qty) : 0;
 
-    // DOM Updates
     document.getElementById('calc-prod-cost').textContent = `₹${productCost.toFixed(2)}`;
     document.getElementById('calc-total-exp').textContent = `₹${totalExpenses.toFixed(2)}`;
     document.getElementById('calc-grand-total').textContent = `₹${grandTotal.toFixed(2)}`;
@@ -142,11 +171,10 @@ function calculateLiveSummary() {
     return { productCost, totalExpenses, grandTotal, avgCost };
 }
 
-function savePurchase() {
+async function savePurchase() {
     const calcs = calculateLiveSummary();
     const form = document.getElementById('purchase-form');
     
-    // Parse Custom Expenses
     const customExpenses = [];
     document.querySelectorAll('.custom-expense-row').forEach(row => {
         customExpenses.push({
@@ -156,15 +184,17 @@ function savePurchase() {
         });
     });
 
+    const isEditMode = !!form.dataset.editId;
     const purchaseId = form.dataset.editId || 'p-' + Date.now();
 
-    const purchaseData = {
+    // Mapping fields to Supabase Table structure (snake_case columns)
+    const dbPayload = {
         id: purchaseId,
         title: document.getElementById('p-title').value,
         supplier: document.getElementById('p-supplier').value,
         invoice: document.getElementById('p-invoice').value,
         date: document.getElementById('p-date').value,
-        productName: document.getElementById('p-prod-name').value,
+        product_name: document.getElementById('p-prod-name').value,
         category: document.getElementById('p-category').value || 'Unassigned',
         brand: document.getElementById('p-brand').value || 'Generic',
         sku: document.getElementById('p-sku').value || 'N/A',
@@ -179,24 +209,34 @@ function savePurchase() {
         calculations: calcs
     };
 
-    if (form.dataset.editId) {
-        // Edit mode
-        purchases = purchases.map(p => p.id === purchaseId ? purchaseData : p);
-        delete form.dataset.editId;
-        showToast('Purchase updated successfully!');
-    } else {
-        // New mode
-        purchases.push(purchaseData);
-        showToast('Purchase saved locally!');
-    }
+    showToast('Saving to cloud database...');
 
-    localStorage.setItem('landed_purchases', JSON.stringify(purchases));
-    form.reset();
-    document.getElementById('custom-expenses-container').innerHTML = '';
-    calculateLiveSummary();
-    
-    // Redirect to history view programmatically
-    document.querySelector('[data-target="purchase-history"]').click();
+    try {
+        let error;
+        if (isEditMode) {
+            ({ error } = await _supabase.from('landed_purchases').update(dbPayload).eq('id', purchaseId));
+        } else {
+            ({ error } = await _supabase.from('landed_purchases').insert([dbPayload]));
+        }
+
+        if (error) throw error;
+
+        showToast(isEditMode ? 'Cloud Record Updated!' : 'Saved to Cloud Securely!');
+        
+        // Reset Form
+        if (isEditMode) delete form.dataset.editId;
+        form.reset();
+        document.getElementById('custom-expenses-container').innerHTML = '';
+        calculateLiveSummary();
+
+        // Refresh pipeline
+        await fetchPurchasesFromCloud();
+        document.querySelector('[data-target="purchase-history"]').click();
+
+    } catch (err) {
+        console.error(err);
+        showToast('Database insertion failed!');
+    }
 }
 
 /* ==========================================================================
@@ -207,8 +247,6 @@ function renderApp() {
     renderHistoryTable();
     renderInventoryTable();
     if (activeView === 'reports') renderReports();
-    
-    // Sync Supplier filter options across History view
     syncSupplierFilters();
 }
 
@@ -229,13 +267,14 @@ function setupTableFilters() {
     document.getElementById('history-filter-supplier').addEventListener('change', renderHistoryTable);
     document.getElementById('inventory-search').addEventListener('input', renderInventoryTable);
     
-    // Global data wipe via Settings
-    document.getElementById('btn-clear-data').addEventListener('click', () => {
-        if(confirm('Are you absolutely sure you want to clear ALL inventory data? This cannot be undone.')){
-            localStorage.removeItem('landed_purchases');
-            purchases = [];
-            showToast('All app data wiped.');
-            renderApp();
+    document.getElementById('btn-clear-data').addEventListener('click', async () => {
+        if(confirm('Are you absolutely sure you want to clear ALL cloud data? This cannot be undone.')){
+            showToast('Purging database...');
+            const { error } = await _supabase.from('landed_purchases').delete().neq('id', 'void');
+            if(!error) {
+                showToast('Cloud Database Wiped.');
+                await fetchPurchasesFromCloud();
+            }
         }
     });
 }
@@ -289,7 +328,6 @@ function renderHistoryTable() {
     });
 }
 
-/* CRUD Action Routing Functions */
 window.viewPurchaseDetails = function(id) {
     const p = purchases.find(p => p.id === id);
     if(!p) return;
@@ -331,7 +369,6 @@ window.editPurchase = function(id) {
     const p = purchases.find(p => p.id === id);
     if(!p) return;
 
-    // Load simple fields
     document.getElementById('p-title').value = p.title;
     document.getElementById('p-supplier').value = p.supplier;
     document.getElementById('p-invoice').value = p.invoice;
@@ -347,7 +384,6 @@ window.editPurchase = function(id) {
     document.getElementById('exp-transport').value = p.expenses.transport;
     document.getElementById('exp-room').value = p.expenses.roomTransport;
 
-    // Reconstruct Custom Expenses Rows
     const container = document.getElementById('custom-expenses-container');
     container.innerHTML = '';
     p.expenses.custom.forEach(ce => {
@@ -370,34 +406,47 @@ window.editPurchase = function(id) {
         container.appendChild(row);
     });
 
-    // Set Edit State Flag Anchor
     document.getElementById('purchase-form').dataset.editId = p.id;
     calculateLiveSummary();
-
-    // Navigate to Entry View form window
     document.querySelector('[data-target="new-purchase"]').click();
 };
 
-window.duplicatePurchase = function(id) {
+window.duplicatePurchase = async function(id) {
     const p = purchases.find(p => p.id === id);
     if(!p) return;
     
-    const clone = JSON.parse(JSON.stringify(p));
-    clone.id = 'p-' + Date.now();
-    clone.title += ' (Copy)';
+    const clone = {
+        id: 'p-' + Date.now(),
+        title: p.title + ' (Copy)',
+        supplier: p.supplier,
+        invoice: p.invoice,
+        date: p.date,
+        product_name: p.productName,
+        category: p.category,
+        brand: p.brand,
+        sku: p.sku,
+        qty: p.qty,
+        rate: p.rate,
+        expenses: p.expenses,
+        calculations: p.calculations
+    };
     
-    purchases.push(clone);
-    localStorage.setItem('landed_purchases', JSON.stringify(purchases));
-    showToast('Record duplicated locally!');
-    renderApp();
+    showToast('Duplicating on cloud...');
+    const { error } = await _supabase.from('landed_purchases').insert([clone]);
+    if(!error) {
+        showToast('Record Duplicated!');
+        await fetchPurchasesFromCloud();
+    }
 };
 
-window.deletePurchase = function(id) {
-    if(confirm('Are you sure you want to delete this purchase ledger record?')) {
-        purchases = purchases.filter(p => p.id !== id);
-        localStorage.setItem('landed_purchases', JSON.stringify(purchases));
-        showToast('Record permanently removed.');
-        renderApp();
+window.deletePurchase = async function(id) {
+    if(confirm('Are you sure you want to delete this purchase ledger record from cloud?')) {
+        showToast('Deleting...');
+        const { error } = await _supabase.from('landed_purchases').delete().eq('id', id);
+        if(!error) {
+            showToast('Record permanently removed.');
+            await fetchPurchasesFromCloud();
+        }
     }
 };
 
@@ -410,7 +459,6 @@ function renderInventoryTable() {
     const search = document.getElementById('inventory-search').value.toLowerCase();
     tbody.innerHTML = '';
 
-    // Aggregate inventory groups by product variant map
     const inventoryMap = {};
 
     purchases.forEach(p => {
@@ -449,18 +497,15 @@ function renderReports() {
     const monthlyCtx = document.getElementById('chart-monthly').getContext('2d');
     const expenseCtx = document.getElementById('chart-expenses').getContext('2d');
 
-    // Clean up instances to reload fresh datasets on canvas toggles
     if (chartMonthlyInstance) chartMonthlyInstance.destroy();
     if (chartExpensesInstance) chartExpensesInstance.destroy();
 
-    // Data Aggregation logic (Monthly)
     const monthlyData = {};
     purchases.forEach(p => {
-        const month = p.date.substring(0, 7); // Format: YYYY-MM
+        const month = p.date.substring(0, 7);
         monthlyData[month] = (monthlyData[month] || 0) + p.calculations.grandTotal;
     });
 
-    // Expense Aggregation data logic
     let hamaliTotal = 0, transportTotal = 0, roomTotal = 0, customTotal = 0;
     purchases.forEach(p => {
         hamaliTotal += p.expenses.hamali;
@@ -469,7 +514,6 @@ function renderReports() {
         p.expenses.custom.forEach(c => customTotal += c.amount);
     });
 
-    // Chart 1: Monthly Costing Trend Line
     chartMonthlyInstance = new Chart(monthlyCtx, {
         type: 'bar',
         data: {
@@ -484,7 +528,6 @@ function renderReports() {
         options: { responsive: true }
     });
 
-    // Chart 2: Structural Operational Overhead Distribution Pie
     chartExpensesInstance = new Chart(expenseCtx, {
         type: 'doughnut',
         data: {
@@ -509,7 +552,6 @@ function showToast(message) {
     
     container.appendChild(toast);
     
-    // Auto purge toast DOM element after anim completions
     setTimeout(() => {
         toast.remove();
     }, 3000);
